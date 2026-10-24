@@ -485,8 +485,14 @@ if {[is_sapi_subport]} {
 
     destroot.destdir    INSTALL_ROOT=${destroot}
 
-    variant debug description {Enable debug support (useful to analyze a PHP-related core dump)} {
-        configure.args-append   --enable-debug
+    # Fix SAPI linking on older macOS systems requiring LegacySupport
+    # Safely append LegacySupport to EXTRA_LIBS without overwriting libxml2/zlib
+    if {${os.platform} eq "darwin" && ${os.major} <= 10} {
+        post-configure {
+            if {[file exists ${worksrcpath}/Makefile]} {
+                reinplace "s|^EXTRA_LIBS =|EXTRA_LIBS = -lMacportsLegacySupport|" ${worksrcpath}/Makefile
+            }
+        }
     }
 
     variant pear description {Enable pear support} {
